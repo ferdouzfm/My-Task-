@@ -1,135 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tiny DApp — Connect & Balance</title>
-  <style>
-    :root{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
-    body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0f172a;color:#e6eef8}
-    .card{width:360px;padding:20px;border-radius:12px;background:linear-gradient(180deg,#111827 0%, #0b1220 100%);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-    h1{font-size:18px;margin:0 0 12px}
-    button{appearance:none;border:0;padding:10px 14px;border-radius:10px;background:#0ea5a4;color:#042028;font-weight:600;cursor:pointer}
-    .muted{color:#9fb0c6;font-size:13px}
-    .row{display:flex;gap:8px;align-items:center;margin-top:12px}
-    .info{background:#061421;padding:10px;border-radius:8px;font-family:monospace}
-    a.small{font-size:12px;color:#7dd3fc}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Tiny DApp — Connect wallet & view balance</h1>
-    <div id="status" class="muted">Not connected</div>
-
-    <div class="row" style="margin-top:14px;">
-      <button id="connect">Connect Wallet</button>
-      <button id="refresh" style="background:#1e293b;color:#fff">Refresh</button>
-    </div>
-
-    <div style="margin-top:12px">
-      <div class="info">
-        <div>Address: <span id="addr">—</span></div>
-        <div>Balance: <span id="bal">—</span> ETH</div>
-        <div>Chain ID: <span id="chain">—</span></div>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:12px">
-      <button id="send">Send 0.001 ETH to self</button>
-      <div class="muted" style="font-size:12px">(will open MetaMask)</div>
-    </div>
-
-    <p class="muted" style="margin-top:12px">Drop this file in a simple static server or open as a file while MetaMask is enabled. Uses ethers.js.</p>
-  </div>
-
-  <script type="module">
-    import * as ethers from 'https://cdn.jsdelivr.net/npm/ethers@6.6.0/dist/ethers.esm.min.js';
-
-    const connectBtn = document.getElementById('connect');
-    const refreshBtn = document.getElementById('refresh');
-    const sendBtn = document.getElementById('send');
-    const status = document.getElementById('status');
-    const addrEl = document.getElementById('addr');
-    const balEl = document.getElementById('bal');
-    const chainEl = document.getElementById('chain');
-
-    let provider, signer;
-
-    function shortAddr(a){ return a ? a.slice(0,6) + '...' + a.slice(-4) : '—'; }
-
-    async function initProvider(){
-      if (!window.ethereum) {
-        status.textContent = 'No Ethereum wallet detected (install MetaMask)';
-        return null;
-      }
-      provider = new ethers.BrowserProvider(window.ethereum);
-      return provider;
-    }
-
-    async function connect(){
-      await initProvider();
-      try{
-        // prompt user to connect
-        await provider.send('eth_requestAccounts', []);
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        addrEl.textContent = shortAddr(address) + '\n';
-        status.textContent = 'Connected';
-        await refresh();
-        // react to account/network changes
-        window.ethereum.on && window.ethereum.on('accountsChanged', () => connect());
-        window.ethereum.on && window.ethereum.on('chainChanged', () => refresh());
-      }catch(e){
-        status.textContent = 'Connection rejected';
-        console.error(e);
-      }
-    }
-
-    async function refresh(){
-      if (!provider) await initProvider();
-      if (!provider) return;
-      try{
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        addrEl.textContent = shortAddr(address);
-        const raw = await provider.getBalance(address);
-        balEl.textContent = ethers.formatEther(raw);
-        const network = await provider.getNetwork();
-        chainEl.textContent = network.chainId;
-        status.textContent = 'Ready';
-      }catch(e){
-        addrEl.textContent = '—'; balEl.textContent = '—'; chainEl.textContent = '—';
-        status.textContent = 'Not connected';
-      }
-    }
-
-    async function sendToSelf(){
-      if (!signer) {
-        status.textContent = 'Connect first';
-        return;
-      }
-      try{
-        const to = await signer.getAddress();
-        const tx = await signer.sendTransaction({
-          to,
-          value: ethers.parseEther('0.001')
-        });
-        status.textContent = 'Transaction sent — waiting for confirmation...';
-        await tx.wait();
-        status.textContent = 'Transaction confirmed!';
-        await refresh();
-      }catch(e){
-        console.error(e);
-        status.textContent = 'Transaction failed or cancelled';
-      }
-    }
-
-    connectBtn.addEventListener('click', connect);
-    refreshBtn.addEventListener('click', refresh);
-    sendBtn.addEventListener('click', sendToSelf);
-
-    // try to init silently
-    initProvider();
-  </script>
-</body>
-</html>
+my-dapp/
+├─ contracts/           # Solidity contracts (e.g. MyToken.sol)
+├─ scripts/             # deployment or helper scripts (Hardhat/Truffle)
+├─ tests/               # JS/TS tests for contracts
+├─ frontend/
+│  ├─ index.html
+│  ├─ css/
+│  │  └─ styles.css
+│  └─ js/
+│     └─ app.js
+├─ artifacts/           # build artifacts (ignored)
+├─ node_modules/        # (ignored)
+├─ .env                 # local secrets (ignored)
+├─ .gitignore
+├─ hardhat.config.js    # or truffle-config.js
+├─ package.json
+├─ README.md
+└─ LICENSE
